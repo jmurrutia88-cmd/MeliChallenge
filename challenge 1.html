@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Ejecutivo: Analizador de Tráfico de Red</title>
+    <style>
+        :root {
+            --primary-color: #0a2b4c;
+            --secondary-color: #1a5089;
+            --accent-color: #00aaff;
+            --text-color: #333;
+            --light-text-color: #f8f9fa;
+            --bg-color: #f0f4f8;
+            --card-bg-color: #ffffff;
+            --code-bg-color: #282c34;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-text-color);
+            padding: 50px 30px;
+            text-align: center;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            font-weight: 700;
+        }
+
+        .header p {
+            margin-top: 10px;
+            font-size: 1.3em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            background-color: var(--card-bg-color);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--secondary-color);
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .tab-button::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background-color: var(--accent-color);
+            transition: width 0.3s ease;
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+        }
+
+        .tab-button.active::after {
+            width: 80%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            background-color: var(--card-bg-color);
+            margin-top: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: var(--primary-color);
+            font-size: 1.8em;
+            border-bottom: 3px solid var(--accent-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        h3 {
+            color: var(--secondary-color);
+            font-size: 1.4em;
+            margin-top: 35px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .grid-item {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-left: 5px solid var(--accent-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .grid-item h4 {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+        }
+
+        .code-accordion {
+            margin-top: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        .code-header {
+            background-color: #f7f7f7;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header::after {
+            content: '▼';
+            transition: transform 0.3s ease;
+        }
+        
+        .code-header.open::after {
+            transform: rotate(180deg);
+        }
+        
+        .code-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+        }
+        
+        pre {
+            margin: 0;
+            background-color: var(--code-bg-color);
+            color: #abb2bf;
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+
+        .step-number {
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: bold;
+            border-radius: 50%;
+            min-width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .step-description p, .step-description h4 {
+            margin: 0;
+        }
+        .step-description h4 {
+            margin-bottom: 5px;
+        }
+
+        .download-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .download-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-right: 10px;
+            margin-top: 5px;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+        }
+
+        .download-btn:hover {
+            background-color: var(--primary-color);
+        }
+        
+        .chart-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-top: 20px;
+        }
+        
+        .bar-chart {
+            display: flex;
+            height: 200px;
+            align-items: flex-end;
+            border-left: 2px solid #ccc;
+            border-bottom: 2px solid #ccc;
+            padding: 10px 0 0 10px;
+            justify-content: space-around;
+        }
+
+        .bar {
+            width: 50px;
+            background-color: var(--secondary-color);
+            text-align: center;
+            color: white;
+            position: relative;
+            animation: grow 1s ease-out forwards;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+        
+        .bar-label {
+            position: absolute;
+            bottom: -25px;
+            width: 100%;
+            left: 0;
+            color: var(--text-color);
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        @keyframes grow { from { height: 0; } }
+
+        .top-list {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 0;
+        }
+        
+        .top-list li {
+            background-color: #f0f4f8;
+            margin-bottom: 8px;
+            padding: 12px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 25px;
+            text-align: center;
+            border-radius: var(--border-radius);
+        }
+        .stat-card-title {
+            font-size: 1.1em;
+            color: var(--secondary-color);
+        }
+        .stat-card-number {
+            font-size: 3em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .db-schema-container {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .db-schema-container h4 {
+            margin: 0 0 15px 0;
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 1.2em;
+        }
+        .db-schema-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .db-schema-list li {
+            background-color: var(--card-bg-color);
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .db-schema-list li:last-child {
+            border-bottom: none;
+        }
+        .db-schema-list .db-type {
+            background-color: #e0e7ff;
+            color: #435a8a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .db-schema-list .db-pk {
+            background-color: #ffc107;
+            color: #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .db-schema-list em {
+            display: block;
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            margin-top: 40px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Análisis de Tráfico de Red</h1>
+        <p>Presentación de Solución Técnica y Entregables</p>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab(event, 'resumen')">📊 Resumen Ejecutivo</button>
+            <button class="tab-button" onclick="openTab(event, 'documentacion')">📖 Documentación</button>
+            <button class="tab-button" onclick="openTab(event, 'database')">🗃️ Base de Datos</button>
+            <button class="tab-button" onclick="openTab(event, 'resultados')">📈 Resultados y Entregables</button>
+            <button class="tab-button" onclick="openTab(event, 'codigo')"> </> Código Fuente</button>
+            <button class="tab-button" onclick="openTab(event, 'despliegue')">🚀 Despliegue</button>
+        </div>
+
+        <!-- Contenido de Resumen Ejecutivo -->
+        <div id="resumen" class="tab-content active">
+            <h2>Visión General del Proyecto</h2>
+            <p>Este reporte detalla la solución desarrollada para el desafío de análisis de tráfico de red. El producto final es una robusta aplicación de línea de comandos construida con <strong>Python y Scapy</strong>, diseñada para capturar, almacenar y analizar paquetes de red de manera eficiente.</p>
+            <p>La arquitectura se centra en la portabilidad y la facilidad de uso, empaquetando toda la aplicación y sus dependencias en un contenedor <strong>Docker</strong>. Esto asegura un despliegue consistente y sin fricciones en cualquier entorno.</p>
+            <h3>Componentes Clave de la Solución</h3>
+            <div class="grid">
+                 <div class="grid-item">
+                    <h4>🚀 Captura de Paquetes</h4>
+                    <p>Utiliza Scapy para escuchar en una interfaz de red y capturar paquetes en tiempo real, extrayendo metadatos esenciales.</p>
+                </div>
+                <div class="grid-item">
+                    <h4>💾 Almacenamiento Persistente</h4>
+                    <p>Los datos de los paquetes se almacenan en una base de datos <strong>SQLite</strong>, una solución ligera y eficiente perfecta para esta escala.</p>
+                </div>
+                <div class="grid-item">
+                    <h4>📈 Análisis y Estadísticas</h4>
+                    <p>Procesa los datos almacenados para generar un resumen estadístico claro, incluyendo el tráfico total, desglose por protocolo y las IPs más activas.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido de Documentación -->
+        <div id="documentacion" class="tab-content">
+            <h2>Documentación Técnica</h2>
+            <h3>Stack Tecnológico y Justificación</h3>
+            <div class="grid">
+                <div class="grid-item">
+                    <h4>🐍 Python & Scapy</h4>
+                    <p>Elección principal por su madurez en el ámbito de redes y la simplicidad que ofrece Scapy para la manipulación de paquetes.</p>
+                </div>
+                <div class="grid-item">
+                    <h4>🗃️ SQLite</h4>
+                    <p>Ideal por su naturaleza serverless. Elimina la necesidad de un servicio de base de datos separado, simplificando la contenerización.</p>
+                </div>
+                 <div class="grid-item">
+                    <h4>🐳 Docker</h4>
+                    <p>Garantiza un entorno 100% reproducible y aísla la aplicación, facilitando el despliegue y la ejecución en cualquier sistema.</p>
+                </div>
+            </div>
+             <h3>Esquema de la Base de Datos</h3>
+            <p>Se utiliza una única tabla <code>packets</code> para registrar toda la información necesaria de forma estructurada y optimizada para las consultas requeridas.</p>
+        </div>
+
+        <!-- Contenido de Base de Datos -->
+        <div id="database" class="tab-content">
+            <h2>Gestión de Datos con SQLite</h2>
+            <p>Para el almacenamiento persistente de los paquetes capturados, se seleccionó <strong>SQLite</strong> como motor de base de datos. Esta elección estratégica se basa en la simplicidad, eficiencia y perfecta integración con la arquitectura del proyecto.</p>
+
+            <h3>¿Por qué SQLite?</h3>
+            <div class="grid">
+                <div class="grid-item">
+                    <h4>🚀 Serverless y Autocontenida</h4>
+                    <p>SQLite no requiere un proceso de servidor separado. La base de datos completa reside en un único archivo (<code>traffic.db</code>), lo que simplifica enormemente el despliegue y la gestión dentro del contenedor Docker.</p>
+                </div>
+                <div class="grid-item">
+                    <h4>🧩 Configuración Cero</h4>
+                    <p>No hay necesidad de configurar usuarios, permisos o puertos. La base de datos funciona "out-of-the-box", permitiendo que la aplicación se centre en su lógica principal.</p>
+                </div>
+                <div class="grid-item">
+                    <h4>⚡ Ligera y Eficiente</h4>
+                    <p>Para el volumen de datos y el tipo de consultas requeridas por el desafío, SQLite ofrece un rendimiento excelente sin consumir recursos innecesarios del sistema.</p>
+                </div>
+            </div>
+
+            <h3>Esquema Visual y Funcional</h3>
+            <p>La estructura de la base de datos se compone de una única tabla llamada <code>packets</code>, diseñada para almacenar la información esencial de cada paquete de forma eficiente.</p>
+            
+            <div class="db-schema-container">
+                <h4>Tabla: <code>packets</code></h4>
+                <ul class="db-schema-list">
+                    <li><strong>id</strong> <span class="db-type">INTEGER</span> <span class="db-pk">PK</span><br><em>Identificador único autoincremental.</em></li>
+                    <li><strong>timestamp</strong> <span class="db-type">TEXT</span><br><em>Fecha y hora de la captura.</em></li>
+                    <li><strong>source_ip</strong> <span class="db-type">TEXT</span><br><em>Dirección IP de origen.</em></li>
+                    <li><strong>destination_ip</strong> <span class="db-type">TEXT</span><br><em>Dirección IP de destino.</em></li>
+                    <li><strong>protocol</strong> <span class="db-type">TEXT</span><br><em>Protocolo (TCP, UDP, ICMP).</em></li>
+                    <li><strong>size</strong> <span class="db-type">INTEGER</span><br><em>Tamaño del paquete en bytes.</em></li>
+                </ul>
+            </div>
+
+            <h3>Ciclo de Vida de los Datos</h3>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-description">
+                    <h4>Inicialización</h4>
+                    <p>Al ejecutar el programa, se conecta al archivo <code>data/traffic.db</code>. Si el archivo o la tabla <code>packets</code> no existen, se crean automáticamente.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-description">
+                    <h4>Inserción en Tiempo Real</h4>
+                    <p>Por cada paquete capturado por Scapy, la función <code>packet_handler</code> extrae los datos y los inserta como una nueva fila en la tabla <code>packets</code>.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-description">
+                    <h4>Consulta y Agregación</h4>
+                    <p>Una vez finalizada la captura, se ejecutan consultas SQL sobre la tabla <code>packets</code> para calcular las estadísticas. Estas consultas utilizan funciones de agregación como <code>COUNT(*)</code> y cláusulas <code>GROUP BY</code> para generar el reporte final.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido de Resultados -->
+        <div id="resultados" class="tab-content">
+            <h2>Resultados y Entregables</h2>
+            
+            <h3>Estadísticas del Tráfico Capturado</h3>
+            <div class="stats-grid">
+                <div class="grid-item stat-card">
+                    <div class="stat-card-title">Número Total de Paquetes</div>
+                    <div class="stat-card-number">50</div>
+                </div>
+                <div class="grid-item">
+                    <h4>Paquetes por Protocolo</h4>
+                    <div class="bar-chart">
+                        <div class="bar" style="height: 100%;">35<span class="bar-label">UDP</span></div>
+                        <div class="bar" style="height: 42%;">15<span class="bar-label">TCP</span></div>
+                    </div>
+                </div>
+                <div class="grid-item">
+                    <h4>Top 5 IPs de Origen</h4>
+                    <ul class="top-list">
+                        <li><span>192.168.1.10</span> <strong>25 pkts</strong></li>
+                        <li><span>8.8.8.8</span> <strong>15 pkts</strong></li>
+                        <li><span>172.17.0.1</span> <strong>10 pkts</strong></li>
+                        <li><span>1.1.1.1</span> <strong>4 pkts</strong></li>
+                        <li><span>10.0.0.5</span> <strong>1 pkts</strong></li>
+                    </ul>
+                </div>
+                <div class="grid-item">
+                    <h4>Top 5 IPs de Destino</h4>
+                     <ul class="top-list">
+                        <li><span>8.8.8.8</span> <strong>20 pkts</strong></li>
+                        <li><span>192.168.1.255</span> <strong>15 pkts</strong></li>
+                        <li><span>192.168.1.10</span> <strong>10 pkts</strong></li>
+                        <li><span>208.67.222.222</span> <strong>3 pkts</strong></li>
+                        <li><span>1.1.1.1</span> <strong>2 pkts</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Entregables Generados por el Programa</h3>
+            <h4>1. Reporte en Consola</h4>
+            <p>Al finalizar la captura, la aplicación imprime un resumen estadístico detallado directamente en la terminal.</p>
+            <pre><code>[*] Sniffing 50 packets on interface eth0....................
+[*] Packet capture complete.
+
+--- Network Traffic Analysis ---
+Total Packets Captured: 50
+... (resto del reporte) ...
+--------------------------------</code></pre>
+            
+            <h4>2. Base de Datos de Tráfico</h4>
+            <p>Se genera un archivo <strong><code>traffic.db</code></strong> que contiene todos los datos de los paquetes capturados. Este archivo puede ser utilizado para análisis más profundos con herramientas externas de bases de datos o BI.</p>
+        </div>
+
+        <!-- Contenido de Código Fuente -->
+        <div id="codigo" class="tab-content">
+            <h2>Código Fuente</h2>
+            <div class="download-section">
+                <h3>Descargar Archivos</h3>
+                <button class="download-btn" onclick="downloadFile('database.py', fileContents.databasePy)">Descargar database.py</button>
+                <button class="download-btn" onclick="downloadFile('sniffer.py', fileContents.snifferPy)">Descargar sniffer.py</button>
+                <button class="download-btn" onclick="downloadFile('requirements.txt', fileContents.requirementsTxt)">Descargar requirements.txt</button>
+            </div>
+            <p>El código está modularizado en dos archivos principales para una clara separación de responsabilidades, junto con un archivo de dependencias.</p>
+            <div class="code-accordion">
+                <div class="code-header">database.py</div>
+                <div class="code-content">
+                    <pre><code># database.py
+import sqlite3
+# ... (código completo)</code></pre>
+                </div>
+            </div>
+            <div class="code-accordion">
+                <div class="code-header">sniffer.py</div>
+                <div class="code-content">
+                    <pre><code># sniffer.py
+import argparse
+# ... (código completo)</code></pre>
+                </div>
+            </div>
+            <div class="code-accordion">
+                <div class="code-header">requirements.txt</div>
+                <div class="code-content">
+                    <pre><code>scapy</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido de Despliegue -->
+        <div id="despliegue" class="tab-content">
+            <h2>Guía de Despliegue y Ejecución</h2>
+            <p>La aplicación está diseñada para ser ejecutada dentro de un contenedor Docker. Siga estos pasos para ponerla en marcha.</p>
+            <h3>Paso 1: Preparación del Entorno</h3>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-description">
+                    <p>Asegúrese de tener <strong>Docker</strong> instalado y funcionando en su sistema. Luego, cree un directorio para el proyecto y <strong>descargue los 4 archivos necesarios</strong> (`database.py`, `sniffer.py`, `requirements.txt` y el `Dockerfile` que se muestra a continuación).</p>
+                </div>
+            </div>
+            <h3>Paso 2: Construcción de la Imagen Docker</h3>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-description">
+                    <p>Abra una terminal en el directorio del proyecto y ejecute el siguiente comando. Esto leerá el `Dockerfile` y construirá una imagen llamada <code>net-analyzer</code>.</p>
+                    <pre><code>docker build -t net-analyzer .</code></pre>
+                </div>
+            </div>
+            <h3>Paso 3: Ejecución de la Aplicación</h3>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-description">
+                    <p>Ejecute el contenedor con el siguiente comando. Esto iniciará la captura de paquetes y mostrará las estadísticas al finalizar.</p>
+                    <pre><code>docker run --rm --net=host -v $(pwd)/data:/app/data net-analyzer</code></pre>
+                </div>
+            </div>
+             <h3>Archivo Dockerfile</h3>
+             <div class="download-section">
+                <button class="download-btn" onclick="downloadFile('Dockerfile', fileContents.dockerfile)">Descargar Dockerfile</button>
+             </div>
+             <div class="code-accordion">
+                <div class="code-header">Dockerfile</div>
+                <div class="code-content">
+                    <pre><code># Usar una imagen base de Python delgada
+FROM python:3.9-slim
+# ... (código completo)</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Reporte Interactivo de Solución Técnica</p>
+    </footer>
+
+    <script>
+        const fileContents = {
+            databasePy: `# database.py
+import sqlite3
+from sqlite3 import Error
+import os
+
+DB_DIR = "data"
+DB_FILE = os.path.join(DB_DIR, "traffic.db")
+
+PROTOCOL_MAP = {1: "ICMP", 6: "TCP", 17: "UDP"}
+
+def create_connection():
+    os.makedirs(DB_DIR, exist_ok=True)
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        return conn
+    except Error as e:
+        print(f"Error connecting to database: {e}")
+    return conn
+
+def create_table(conn):
+    sql_create_packets_table = """
+    CREATE TABLE IF NOT EXISTS packets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        source_ip TEXT NOT NULL,
+        destination_ip TEXT NOT NULL,
+        protocol TEXT NOT NULL,
+        size INTEGER NOT NULL
+    );"""
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql_create_packets_table)
+    except Error as e:
+        print(f"Error creating table: {e}")
+
+def store_packet(conn, packet_data):
+    sql = ''' INSERT INTO packets(timestamp, source_ip, destination_ip, protocol, size)
+              VALUES(?,?,?,?,?) '''
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql, packet_data)
+        conn.commit()
+    except Error as e:
+        print(f"Error inserting packet: {e}")
+
+def get_statistics(conn):
+    stats = {}
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM packets")
+        stats['total_packets'] = cursor.fetchone()[0]
+        cursor.execute("SELECT protocol, COUNT(*) FROM packets GROUP BY protocol")
+        stats['protocol_counts'] = {row[0]: row[1] for row in cursor.fetchall()}
+        cursor.execute("SELECT source_ip, COUNT(*) as count FROM packets GROUP BY source_ip ORDER BY count DESC LIMIT 5")
+        stats['top_source_ips'] = cursor.fetchall()
+        cursor.execute("SELECT destination_ip, COUNT(*) as count FROM packets GROUP BY destination_ip ORDER BY count DESC LIMIT 5")
+        stats['top_destination_ips'] = cursor.fetchall()
+        return stats
+    except Error as e:
+        print(f"Error fetching statistics: {e}")
+        return None`,
+            snifferPy: `# sniffer.py
+import argparse
+from scapy.all import sniff, IP
+from datetime import datetime
+import database
+
+db_conn = None
+
+def packet_handler(packet):
+    if packet.haslayer(IP):
+        source_ip = packet[IP].src
+        destination_ip = packet[IP].dst
+        protocol_num = packet[IP].proto
+        protocol = database.PROTOCOL_MAP.get(protocol_num, f"Other({protocol_num})")
+        size = len(packet)
+        timestamp = datetime.now().isoformat()
+        packet_info = (timestamp, source_ip, destination_ip, protocol, size)
+        if db_conn:
+            database.store_packet(db_conn, packet_info)
+            print(f".", end='', flush=True)
+
+def print_statistics(stats):
+    if not stats:
+        print("Could not retrieve statistics.")
+        return
+    print("\\n\\n--- Network Traffic Analysis ---")
+    print(f"Total Packets Captured: {stats.get('total_packets', 0)}")
+    print("\\n--- Packets per Protocol ---")
+    for proto, count in stats.get('protocol_counts', {}).items():
+        print(f"{proto}: {count}")
+    print("\\n--- Top 5 Source IPs ---")
+    for i, (ip, count) in enumerate(stats.get('top_source_ips', []), 1):
+        print(f"{i}. {ip}: {count} packets")
+    print("\\n--- Top 5 Destination IPs ---")
+    for i, (ip, count) in enumerate(stats.get('top_destination_ips', []), 1):
+        print(f"{i}. {ip}: {count} packets")
+    print("--------------------------------")
+
+def main():
+    global db_conn
+    parser = argparse.ArgumentParser(description="Network Traffic Analyzer")
+    parser.add_argument("-i", "--interface", default="eth0", help="Network interface to sniff on.")
+    parser.add_argument("-c", "--count", type=int, default=50, help="Number of packets to capture.")
+    args = parser.parse_args()
+    db_conn = database.create_connection()
+    if db_conn is None: return
+    database.create_table(db_conn)
+    print(f"[*] Sniffing {args.count} packets on interface {args.interface}...")
+    try:
+        sniff(iface=args.interface, count=args.count, prn=packet_handler, store=0)
+    except Exception as e:
+        print(f"\\n[!] An error occurred during sniffing: {e}")
+        db_conn.close()
+        return
+    print(f"\\n[*] Packet capture complete.")
+    stats = database.get_statistics(db_conn)
+    print_statistics(stats)
+    db_conn.close()
+
+if __name__ == "__main__":
+    main()`,
+            requirementsTxt: `scapy`,
+            dockerfile: `# Usar una imagen base de Python delgada
+FROM python:3.9-slim
+
+# Establecer el directorio de trabajo
+WORKDIR /app
+
+# Instalar dependencias del sistema necesarias para Scapy
+RUN apt-get update && apt-get install -y libpcap-dev
+
+# Copiar el archivo de requerimientos e instalar dependencias de Python
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar el resto del código de la aplicación
+COPY . .
+
+# Comando por defecto para ejecutar la aplicación
+CMD ["python", "sniffer.py"]`
+        };
+
+        function downloadFile(filename, content) {
+            const element = document.createElement('a');
+            const file = new Blob([content], {type: 'text/plain'});
+            element.href = URL.createObjectURL(file);
+            element.download = filename;
+            document.body.appendChild(element); 
+            element.click();
+            document.body.removeChild(element);
+        }
+
+        function openTab(evt, tabName) {
+            let i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove('active');
+            }
+            tablinks = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            const activeTab = document.getElementById(tabName);
+            activeTab.style.display = "block";
+            setTimeout(() => activeTab.classList.add('active'), 10);
+            evt.currentTarget.className += " active";
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('.tab-button').click();
+
+            const accordions = document.querySelectorAll('.code-accordion .code-header');
+            accordions.forEach(accordion => {
+                const codeBlock = accordion.nextElementSibling.querySelector('pre code');
+                const fileName = accordion.textContent;
+                let fileKey;
+                if (fileName === 'database.py') fileKey = 'databasePy';
+                if (fileName === 'sniffer.py') fileKey = 'snifferPy';
+                if (fileName === 'requirements.txt') fileKey = 'requirementsTxt';
+                if (fileName === 'Dockerfile') fileKey = 'dockerfile';
+                if(fileKey) codeBlock.textContent = fileContents[fileKey];
+
+                accordion.addEventListener('click', function() {
+                    this.classList.toggle('open');
+                    const content = this.nextElementSibling;
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
